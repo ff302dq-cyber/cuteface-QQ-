@@ -34,5 +34,11 @@
     "type": "bool",
     "hint": "追加表情时是否引用回复原消息。由于防分段机制会跳过AstrBot自动引用，开启此项会手动补上引用。",
     "default": true
+  },
+  "face_reading": {
+    "description": "读懂用户表情",
+    "type": "bool",
+    "hint": "开启后，用户发送的QQ小表情会被翻译成(表情:名称)的文字，让LLM能理解表情含义并做出相应回应。",
+    "default": true
   }
 }
