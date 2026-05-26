@@ -1,0 +1,32 @@
+{
+  "emoji_pool": {
+    "description": "表情ID池",
+    "type": "list",
+    "hint": "QQ表情的ID列表，LLM会根据消息情感从中选出匹配的表情。每个bot实例配不同的池子来体现角色性格。",
+    "default": [179]
+  },
+  "max_text_length": {
+    "description": "触发阈值(字数)",
+    "type": "int",
+    "hint": "只有纯文本消息且字数不超过此值时才会追加表情。默认35，即短聊天消息才带表情。",
+    "default": 35
+  },
+  "probability": {
+    "description": "追加概率",
+    "type": "float",
+    "hint": "0.0~1.0，1.0表示每条短消息都追加表情，0.6表示60%概率。",
+    "default": 0.6
+  },
+  "min_faces": {
+    "description": "最少追加几个表情",
+    "type": "int",
+    "hint": "每次追加表情的最小数量",
+    "default": 1
+  },
+  "max_faces": {
+    "description": "最多追加几个表情",
+    "type": "int",
+    "hint": "每次追加表情的最大数量，实际数量在min和max之间随机",
+    "default": 3
+  }
+}
