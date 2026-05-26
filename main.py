@@ -48,7 +48,7 @@ JUDGE_PROMPT_TEMPLATE = """从下面的QQ表情池中，选出{num}个最匹配�
 要求：只返回表情ID数字，用英文逗号分隔，不要任何其他内容。"""
 
 
-@register("cute_face", "菌菌", "短消息自动追加匹配情感的QQ小表情", "1.1.0")
+@register("cute_face", "菌菌", "短消息自动追加匹配情感的QQ小表情", "1.3.0")
 class CuteFace(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
@@ -59,6 +59,7 @@ class CuteFace(Star):
         self.probability: float = config.get("probability", 0.6)
         self.min_faces: int = config.get("min_faces", 1)
         self.max_faces: int = config.get("max_faces", 3)
+        self.reply_with_quote: bool = config.get("reply_with_quote", True)
 
         # 构建当前表情池的描述文本（供LLM理解每个表情的含义）
         self._pool_desc = self._build_pool_desc()
@@ -110,40 +111,64 @@ class CuteFace(Star):
 
         # 决定这次追加几个表情
         num_faces = random.randint(self.min_faces, self.max_faces)
+        appended = False
 
         try:
             # 获取当前会话的LLM provider
             umo = event.unified_msg_origin
             provider_id = await self.context.get_current_chat_provider_id(umo=umo)
             if not provider_id:
-                # 没有配置LLM的话就回退到随机
                 self._append_random(chain, num_faces)
-                return
-
-            # 构建判断prompt
-            prompt = JUDGE_PROMPT_TEMPLATE.format(
-                num=num_faces,
-                pool_desc=self._pool_desc,
-                text=full_text
-            )
-
-            # 调用LLM判断情感并选表情
-            llm_resp = await self.context.llm_generate(
-                chat_provider_id=provider_id,
-                prompt=prompt,
-            )
-
-            face_ids = self._parse_face_ids(llm_resp.completion_text)
-
-            if face_ids:
-                for fid in face_ids[:num_faces]:
-                    chain.append(Comp.Face(id=fid))
+                appended = True
             else:
-                self._append_random(chain, num_faces)
+                # 构建判断prompt
+                prompt = JUDGE_PROMPT_TEMPLATE.format(
+                    num=num_faces,
+                    pool_desc=self._pool_desc,
+                    text=full_text
+                )
+
+                # 调用LLM判断情感并选表情
+                llm_resp = await self.context.llm_generate(
+                    chat_provider_id=provider_id,
+                    prompt=prompt,
+                )
+
+                face_ids = self._parse_face_ids(llm_resp.completion_text)
+
+                if face_ids:
+                    for fid in face_ids[:num_faces]:
+                        chain.append(Comp.Face(id=fid))
+                else:
+                    self._append_random(chain, num_faces)
+                appended = True
 
         except Exception as e:
             logger.warning(f"[cute_face] LLM判断表情失败，回退到随机: {e}")
             self._append_random(chain, num_faces)
+            appended = True
+
+        if appended:
+            # 关键：将 result_content_type 设为 None，
+            # 使这条消息跳过 AstrBot 的 LLM 分段流水线，
+            # 避免 Face 组件被拆成单独的消息发送。
+            try:
+                result.result_content_type = None
+            except Exception:
+                pass
+
+            # 由于跳过了流水线，reply_with_quote 也被跳过了，
+            # 需要手动把引用加回来。
+            if self.reply_with_quote:
+                try:
+                    msg_id = event.message_obj.message_id
+                    if msg_id:
+                        # 检查 chain 里是否已经有 Reply 组件（避免重复）
+                        has_reply = any(isinstance(c, Comp.Reply) for c in chain)
+                        if not has_reply:
+                            chain.insert(0, Comp.Reply(id=str(msg_id)))
+                except Exception:
+                    pass  # 拿不到 message_id 就算了，不影响主流程
 
     def _append_random(self, chain: list, num: int):
         """LLM不可用时的随机回退"""

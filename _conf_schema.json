@@ -28,5 +28,11 @@
     "type": "int",
     "hint": "每次追加表情的最大数量，实际数量在min和max之间随机",
     "default": 3
+  },
+  "reply_with_quote": {
+    "description": "引用回复原消息",
+    "type": "bool",
+    "hint": "追加表情时是否引用回复原消息。由于防分段机制会跳过AstrBot自动引用，开启此项会手动补上引用。",
+    "default": true
   }
 }
