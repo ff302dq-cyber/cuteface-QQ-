@@ -100,7 +100,7 @@ class CuteFace(Star):
 
     # ==================== 读表情：把用户发的 Face 翻译成文字 ====================
 
-    @filter.on_message()
+    @filter.event_message_type(filter.EventMessageType.ALL)
     async def translate_face_to_text(self, event: AstrMessageEvent):
         """在消息到达LLM之前，把 Face 组件翻译成 (表情:名称) 的文字"""
         if not self.face_reading:
