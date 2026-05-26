@@ -3,7 +3,7 @@ display_name: 小表情追加
 desc: 让bot在短消息后面追加匹配情感的QQ小表情。通过LLM判断消息情绪，从角色专属表情池中选出最合适的表情，萌萌的。
 author: 菌菌
 version: 1.3.0
-repo: ""
+repo: "https://github.com/ff302dq-cyber/cuteface-QQ-"
 min_astrbot_version: 4.5.7
 tags:
   - 表情
