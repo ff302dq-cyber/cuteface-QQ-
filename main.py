@@ -98,12 +98,36 @@ class CuteFace(Star):
                 ids.append(fid)
         return ids
 
+    def _strip_wake_prefix(self, event: AstrMessageEvent, text: str) -> str:
+        msg = (text or "").strip()
+        try:
+            astrbot_config = self.context.get_config()
+            wake_prefix = astrbot_config.get("wake_prefix", "/")
+            if isinstance(wake_prefix, list):
+                prefixes = [str(p) for p in wake_prefix if str(p)]
+            elif isinstance(wake_prefix, str) and wake_prefix:
+                prefixes = [wake_prefix]
+            else:
+                prefixes = []
+
+            for prefix in sorted(prefixes, key=len, reverse=True):
+                if msg.startswith(prefix):
+                    return msg[len(prefix):].strip()
+        except Exception:
+            pass
+        return msg
+
+    def _is_forw_command(self, event: AstrMessageEvent) -> bool:
+        return self._strip_wake_prefix(event, event.message_str).startswith("forw")
+
     # ==================== 读表情：把用户发的 Face 翻译成文字 ====================
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def translate_face_to_text(self, event: AstrMessageEvent):
         """在消息到达LLM之前，把 Face 组件翻译成 (表情:名称) 的文字"""
         if not self.face_reading:
+            return
+        if self._is_forw_command(event):
             return
 
         message = event.message_obj.message
@@ -154,6 +178,8 @@ class CuteFace(Star):
         for c in chain:
             if isinstance(c, Comp.Plain):
                 text_parts.append(c.text.strip())
+            elif isinstance(c, Comp.Face):
+                return
             elif isinstance(c, (Comp.Image, Comp.Record, Comp.Video)):
                 return
 
