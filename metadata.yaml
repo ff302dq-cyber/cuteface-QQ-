@@ -2,7 +2,7 @@ name: astrbot_plugin_cute_face
 display_name: 小表情增强
 desc: 双向表情增强：bot回复短消息时自动追加匹配情感的QQ小表情，同时能读懂用户发的小表情。支持LLM智能选表情、角色专属表情池、防分段。
 author: 菌菌
-version: 1.4.0
+version: 1.5.0
 repo: "https://github.com/ff302dq-cyber/cuteface-QQ-"
 min_astrbot_version: 4.5.7
 tags:
